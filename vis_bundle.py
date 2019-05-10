@@ -28,8 +28,27 @@ def add_and_render(_sm,  _scene, _streamlines, _q):
     _sl_actor = actor.line(_streamlines)
     _scene.add(_sl_actor)
     _q.put(_sl_actor)
+    pos_vec = get_pos_vector(_streamlines)
+    _scene.set_camera(position=100*pos_vec,
+                      focal_point=50*pos_vec,
+                      view_up=(0.18, 0.00, 0.98))
+    _scene.reset_camera()
     _sm.render()
     return
+
+
+def get_pos_vector(_streamlines):
+    # automatic camera position
+    cov = np.cov(np.concatenate(_streamlines, axis=0).T)
+    evals, evecs = np.linalg.eig(cov)
+
+    idx = np.argsort(evals)[::-1]
+    evecs = evecs[:, idx]
+
+    if evecs[0, -1] < 0:
+        return -1 * evecs[:, -1]
+    else:
+        return evecs[:, -1]
 
 
 if __name__ == "__main__":
@@ -53,10 +72,11 @@ if __name__ == "__main__":
     fa_actor = actor.slicer(fa)
 
     scene = window.Scene()
-    scene.set_camera(position=(-176.42, 118.52, 128.20),
-                     focal_point=(113.30, 128.31, 76.56),
-                     view_up=(0.18, 0.00, 0.98))
-    scene.add(fa_actor)
+    # scene.set_camera(position=(-176.42, 118.52, 128.20),
+    #                  focal_point=(113.30, 128.31, 76.56),
+    #                  view_up=(0.18, 0.00, 0.98))
+    # scene.add(fa_actor)
+    # scene.set_camera(view_up=(0.18, 0.00, 0.98))
 
     sm = ShowManager(scene=scene, size=args['plot_size'], reset_camera=False)
 
