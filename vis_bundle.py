@@ -21,7 +21,6 @@ DESC = "Plot streamlines using dipy / fury."
 EPILOG = "---\n Author: danjorg@kth.se"
 
 
-SL_INC = 20
 TIME_INC = 0.1
 
 
@@ -64,6 +63,7 @@ if __name__ == "__main__":
     ap.add_argument("--outname", type=str, help="Path to output file.")
     ap.add_argument("--smoothness", type=float, default=0.5, help="Weighting of new camera position wrt previous.")
     ap.add_argument("--reset-camera", action='store_true', help="Activate resetting of camera in rendering.")
+    ap.add_argument("--sl-per-frame", type=int, default=20, help="Number of streamlines per frame.")
     ap.add_argument("--fps", type=int, default=24, help="Frames per second.")
 
     args = vars(ap.parse_args())
@@ -85,11 +85,11 @@ if __name__ == "__main__":
 
     sm = ShowManager(scene=scene, size=args['plot_size'], reset_camera=False)
 
-    maxsize = args['window_size'] // SL_INC
+    maxsize = args['window_size'] // args['sl_per_frame']
     q = Queue(maxsize=maxsize)
 
     i = 0
-    max_iter = len(bundle_native) // SL_INC
+    max_iter = len(bundle_native) // args['sl_per_frame']
 
     frames = []
     show = args['outname'] is None
@@ -98,7 +98,8 @@ if __name__ == "__main__":
 
     # fill the queue
     while i < max_iter and not q.full():
-        pos_vec = add_and_render(sm, scene, bundle_native[i * SL_INC:(i + 1) * SL_INC], q, prev_pos=pos_vec,
+        pos_vec = add_and_render(sm, scene, bundle_native[i * args['sl_per_frame']:(i + 1) * args['sl_per_frame']], q,
+                                 prev_pos=pos_vec,
                                  w_pos=args['smoothness'], reset=args['reset_camera'], _show=show)
         if not show:
             frames.append(window.snapshot(scene, size=args['plot_size'])[::-1, ::-1])
@@ -107,7 +108,8 @@ if __name__ == "__main__":
     # update the queue
     for i in tqdm(range(i, max_iter)):
         scene.rm(q.get())  # remove oldest bunch of streamlines
-        pos_vec = add_and_render(sm, scene, bundle_native[i*SL_INC:(i+1)*SL_INC], q, prev_pos=pos_vec,
+        pos_vec = add_and_render(sm, scene, bundle_native[i*args['sl_per_frame']:(i+1)*args['sl_per_frame']], q,
+                                 prev_pos=pos_vec,
                                  w_pos=args['smoothness'], reset=args['reset_camera'], _show=show)
         if not show:
             frames.append(window.snapshot(scene, size=args['plot_size'])[::-1, ::-1])
