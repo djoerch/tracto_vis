@@ -10,7 +10,9 @@ from dipy.data import fetch_bundles_2_subjects, read_bundles_2_subjects
 from dipy.tracking.streamline import transform_streamlines, length
 
 from queue import Queue
+from imageio import mimsave
 
+from tqdm import tqdm
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 
@@ -23,7 +25,7 @@ SL_INC = 20
 TIME_INC = 0.1
 
 
-def add_and_render(_sm,  _scene, _streamlines, _q):
+def add_and_render(_sm,  _scene, _streamlines, _q, _show):
     sleep(TIME_INC)
     _sl_actor = actor.line(_streamlines)
     _scene.add(_sl_actor)
@@ -33,7 +35,8 @@ def add_and_render(_sm,  _scene, _streamlines, _q):
                       focal_point=50*pos_vec,
                       view_up=(0.18, 0.00, 0.98))
     _scene.reset_camera()
-    _sm.render()
+    if _show:
+        _sm.render()
     return
 
 
@@ -56,6 +59,7 @@ if __name__ == "__main__":
     ap = ArgumentParser(description=DESC, epilog=EPILOG, formatter_class=RawTextHelpFormatter)
     ap.add_argument("--window-size", required=True, type=int, help="Number of streamlines to be shown at a time.")
     ap.add_argument("--plot-size", type=int, nargs=2, default=[600, 600], help="Resolution of render window.")
+    ap.add_argument("--outname", type=str, help="Path to output file.")
 
     args = vars(ap.parse_args())
 
@@ -86,13 +90,22 @@ if __name__ == "__main__":
     i = 0
     max_iter = len(bundle_native) // SL_INC
 
+    frames = []
+    show = args['outname'] is None
+
     # fill the queue
     while i < max_iter and not q.full():
-        add_and_render(sm, scene, bundle_native[i * SL_INC:(i + 1) * SL_INC], q)
+        add_and_render(sm, scene, bundle_native[i * SL_INC:(i + 1) * SL_INC], q, _show=show)
+        if not show:
+            frames.append(window.snapshot(scene, size=args['plot_size']))
         i += 1
 
     # update the queue
-    while i < max_iter:
+    for i in tqdm(range(i, max_iter)):
         scene.rm(q.get())  # remove oldest bunch of streamlines
-        add_and_render(sm, scene, bundle_native[i*SL_INC:(i+1)*SL_INC], q)
-        i += 1
+        add_and_render(sm, scene, bundle_native[i*SL_INC:(i+1)*SL_INC], q, _show=show)
+        if not show:
+            frames.append(window.snapshot(scene, size=args['plot_size']))
+
+    if args['outname']:
+        mimsave(args['outname'], frames, fps=32)
