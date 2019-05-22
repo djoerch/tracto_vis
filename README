@@ -1,0 +1,9 @@
+# Example call
+
+### live visualisation
+
+`python vis_bundle.py --window-size 500 --plot-size 1000 1000 --smoothness 0.01 --reset-camera --fps 12 --sl-per-frame 10`
+
+### with gif creation
+
+`python vis_bundle.py --window-size 500 --plot-size 1000 1000 --smoothness 0.01 --reset-camera --outname sl_video_example.gif --fps 12 --sl-per-frame 100`
