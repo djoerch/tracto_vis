@@ -2,12 +2,13 @@
 
 from time import sleep
 import numpy as np
+import nibabel as nib
 
 from fury import window, actor
 from fury.window import ShowManager
 
 from dipy.data import fetch_bundles_2_subjects, read_bundles_2_subjects
-from dipy.tracking.streamline import transform_streamlines, length
+from dipy.tracking.streamline import transform_streamlines
 
 from queue import Queue
 from imageio import mimsave
@@ -65,23 +66,31 @@ if __name__ == "__main__":
     ap.add_argument("--reset-camera", action='store_true', help="Activate resetting of camera in rendering.")
     ap.add_argument("--sl-per-frame", type=int, default=20, help="Number of streamlines per frame.")
     ap.add_argument("--fps", type=int, default=24, help="Frames per second.")
+    ap.add_argument("--tractogram", type=str, help="Input file for tractogram to be displayed.")
 
     args = vars(ap.parse_args())
 
-    # get DATA
-    fetch_bundles_2_subjects()
-    dix = read_bundles_2_subjects(subj_id='subj_1', metrics=['fa'],
-                                  bundles=['cg.left', 'cst.right'])
-
-    fa = dix['fa']
-    affine = dix['affine']
-    bundle = dix['cg.left'] + dix['cst.right']
-    bundle_native = transform_streamlines(bundle, np.linalg.inv(affine))
-
-    # fa_actor = actor.slicer(fa)
-
     scene = window.Scene()
-    # scene.add(fa_actor)
+
+    if not args['tractogram']:
+
+        # get DATA
+        fetch_bundles_2_subjects()
+        dix = read_bundles_2_subjects(subj_id='subj_1', metrics=['fa'],
+                                      bundles=['cg.left', 'cst.right'])
+
+        fa = dix['fa']
+        affine = dix['affine']
+        bundle = dix['cg.left'] + dix['cst.right']
+        bundle_native = transform_streamlines(bundle, np.linalg.inv(affine))
+
+        # fa_actor = actor.slicer(fa)
+        # scene.add(fa_actor)
+
+    else:
+
+        tracto = nib.streamlines.load(args['tractogram'])
+        bundle_native = transform_streamlines(tracto.streamlines, tracto.affine)
 
     sm = ShowManager(scene=scene, size=args['plot_size'], reset_camera=False)
 
