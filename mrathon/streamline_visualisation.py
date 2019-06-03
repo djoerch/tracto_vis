@@ -117,7 +117,7 @@ class StreamlineVisualiser:
                               focal_point=self.pos_vec,
                               view_up=self.view_up)
 
-    def load_and_add_regions(self, region_list):
+    def load_and_add_regions(self, region_list, transparency=1):
         """
         Load segmentations and add them to the scene as surfaces.
 
@@ -125,6 +125,8 @@ class StreamlineVisualiser:
         ----------
         region_list : list[str]
             list of strings, each of which represents the path to a binary segmentation file (.nii)
+        transparency : float
+            scalar determining transparency of the mask. (full transparency means 0.0)
 
         Returns
         -------
@@ -146,7 +148,7 @@ class StreamlineVisualiser:
                 affine = seg.affine
 
             # add segmentation to the scene
-            seg_actor = actor.contour_from_roi(seg.get_data(), affine=seg.affine)
+            seg_actor = actor.contour_from_roi(seg.get_data(), affine=seg.affine, opacity=transparency)
             self.scene.add(seg_actor)
 
         return affine

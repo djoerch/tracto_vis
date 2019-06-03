@@ -32,6 +32,7 @@ if __name__ == "__main__":
     ap.add_argument("--tractogram", type=str, help="Input file for tractogram to be displayed.")
     ap.add_argument("--regions", type=str, nargs='*', help="Path to a segmentation file being displayed in order " +
                                                            "to have a static reference during updates.")
+    ap.add_argument("--bundle-mask", type=str, help="Transparent mask of the bundle segmentation.")
     ap.add_argument("--reference-tractogram", type=str, help="Use for deciding on static camera position.")
 
     args = vars(ap.parse_args())
@@ -65,6 +66,10 @@ if __name__ == "__main__":
             bundle_native = transform_streamlines(tracto.streamlines, np.linalg.inv(tracto.affine))
         else:
             bundle_native = transform_streamlines(tracto.streamlines, np.linalg.inv(tracto.affine))
+
+        # add bundle mask
+        if args['bundle_mask']:
+            sl_vis.load_and_add_regions([args['bundle_mask']], transparency=0.4)
 
     max_iter = len(bundle_native) // args['sl_per_frame']
 
